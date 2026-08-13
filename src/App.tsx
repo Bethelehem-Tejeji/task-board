@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import type { SyntheticEvent } from 'react'
 import { supabase } from './supabaseClient'
 import './App.css'
 
@@ -29,8 +30,26 @@ function App() {
   }, [])
 
   const [newTaskTitle, setNewTaskTitle] = useState('')
+  const [tasks, setTasks] = useState<any[]>([])
 
-  async function handleAddTask(e){
+  async function fetchTasks(){
+    if (!userId) return
+
+    const { data, error } = await supabase
+      .from('tasks')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: true})
+
+    if (error){
+      console.error('Failed to fetch tasks:', error)
+      return
+    }
+
+    setTasks(data || [])
+  }
+
+  async function handleAddTask(e: SyntheticEvent<HTMLFormElement>){
     e.preventDefault()
     if(!newTaskTitle.trim()) return
 
@@ -46,6 +65,7 @@ function App() {
     }
 
     setNewTaskTitle('')
+    fetchTasks()
   }
   
   if (loading) return <div>Loading...</div>
@@ -84,11 +104,23 @@ function App() {
             className="flex-1 bg-gray-800 rounded-lg p-4 min-h-[500px]"
           >
             <h2 className="font-semibold mb-4">{column.title}</h2>
-            {/* task cards will go here later*/}
+            <div className="flex flex-col gap-2">
+              {tasks
+                .filter((task) => task.status === column.id)
+                .map((task) => (
+                  <div
+                    key={task.id}
+                    className="bg-gray-700 rounded-lg p-3 text-sm"
+                  >
+                    {task.title}
+                  </div>
+                ))}
+            </div>
           </div>
         ))}
       </div>
     </div>
+    
   )
 }
 
