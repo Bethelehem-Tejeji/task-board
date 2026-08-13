@@ -2,6 +2,9 @@ import { useEffect, useState } from 'react'
 import type { SyntheticEvent } from 'react'
 import { supabase } from './supabaseClient'
 import './App.css'
+import { DndContext } from '@dnd-kit/core'
+import type { DragEndEvent } from '@dnd-kit/core'
+import Column from './Column'
 
 function App() {
   const [userId, setUserId] = useState<string | null>(null)
@@ -67,6 +70,32 @@ function App() {
     setNewTaskTitle('')
     fetchTasks()
   }
+
+  async function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event
+
+    if (!over) return
+
+    const taskId = active.id
+    const newStatus = over.id
+
+    const task = tasks.find((t) => t.id === taskId)
+    if (!task || task.status === newStatus) return
+
+    setTasks((prev) => 
+      prev.map((t) => (t.id === taskId ? { ...t, status: newStatus } : t))
+    )
+
+    const { error } = await supabase
+      .from('tasks')
+      .update({ status: newStatus })
+      .eq('id', taskId)
+
+    if (error) {
+      console.error('Failed to update task status:', error)
+      fetchTasks()
+    }
+  }
   
   if (loading) return <div>Loading...</div>
 
@@ -97,30 +126,14 @@ function App() {
         </button>
       </form>
 
-      <div className="flex gap-4">
-        {columns.map((column) => (
-          <div
-            key={column.id}
-            className="flex-1 bg-gray-800 rounded-lg p-4 min-h-[500px]"
-          >
-            <h2 className="font-semibold mb-4">{column.title}</h2>
-            <div className="flex flex-col gap-2">
-              {tasks
-                .filter((task) => task.status === column.id)
-                .map((task) => (
-                  <div
-                    key={task.id}
-                    className="bg-gray-700 rounded-lg p-3 text-sm"
-                  >
-                    {task.title}
-                  </div>
-                ))}
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-    
+      <DndContext onDragEnd={handleDragEnd}>
+        <div className="flex gap-4">
+          {columns.map((column) => (
+            <Column key={column.id} column={column} tasks={tasks} />
+          ))}
+        </div>
+      </DndContext>
+    </div>  
   )
 }
 
