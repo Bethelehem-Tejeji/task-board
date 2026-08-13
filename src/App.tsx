@@ -52,6 +52,10 @@ function App() {
     setTasks(data || [])
   }
 
+  useEffect(() => {
+    fetchTasks()
+  }, [userId])
+
   async function handleAddTask(e: SyntheticEvent<HTMLFormElement>){
     e.preventDefault()
     if(!newTaskTitle.trim()) return
