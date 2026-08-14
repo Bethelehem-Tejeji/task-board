@@ -1,10 +1,12 @@
 import { useDroppable } from '@dnd-kit/core'
 import TaskCard from './TaskCard'
 
-function Column({ column, tasks }: { column: any; tasks: any[] }) {
+function Column({ column, tasks, loading }: { column: any; tasks: any[]; loading: boolean }) {
     const { setNodeRef } = useDroppable({
         id: column.id,
     })
+
+    const columnTasks = tasks.filter((task) => task.status === column.id)
 
     return (
         <div
@@ -13,11 +15,13 @@ function Column({ column, tasks }: { column: any; tasks: any[] }) {
         >
             <h2 className="font-semibold mb-4">{column.title}</h2>
             <div className="flex flex-col gap-2">
-                {tasks
-                    .filter((task) => task.status === column.id)
-                    .map((task) => (
-                        <TaskCard key={task.id} task={task} />
-                ))}
+                {loading ? (
+                <p className="text-gray-500 text-sm italic">Loading tasks...</p>
+            ) : columnTasks.length === 0 ? (
+                <p className="text-gray-500 text-sm italic">No tasks yet</p>
+            ) : (
+                columnTasks.map((task) => <TaskCard key={task.id} task={task} />)
+            )}
             </div>
         </div>
     )

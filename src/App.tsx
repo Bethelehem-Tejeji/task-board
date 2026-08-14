@@ -34,9 +34,12 @@ function App() {
 
   const [newTaskTitle, setNewTaskTitle] = useState('')
   const [tasks, setTasks] = useState<any[]>([])
+  const [tasksLoading, setTasksLoading] = useState(true)
 
   async function fetchTasks(){
     if (!userId) return
+
+    setTasksLoading(true)
 
     const { data, error } = await supabase
       .from('tasks')
@@ -46,10 +49,12 @@ function App() {
 
     if (error){
       console.error('Failed to fetch tasks:', error)
+      setTasksLoading(false)
       return
     }
 
     setTasks(data || [])
+    setTasksLoading(false)
   }
 
   useEffect(() => {
@@ -133,7 +138,7 @@ function App() {
       <DndContext onDragEnd={handleDragEnd}>
         <div className="flex gap-4">
           {columns.map((column) => (
-            <Column key={column.id} column={column} tasks={tasks} />
+            <Column key={column.id} column={column} tasks={tasks} loading={tasksLoading} />
           ))}
         </div>
       </DndContext>
